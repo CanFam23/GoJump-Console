@@ -49,9 +49,9 @@ func (wall *Wall) IsColliding(p *Player) bool {
 	wLeft := wall.x
 	wRight := wall.x + float64(wall.w)
 
-	// Y overlap (int)
-	pTop := p.y
-	pBottom := p.y + p.h
+	// Y overlap (int). Player is drawn from (y-h) to y
+	pTop := p.y - p.h
+	pBottom := p.y
 
 	wTop := wall.y
 	wBottom := wall.y + wall.h

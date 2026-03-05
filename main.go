@@ -140,19 +140,19 @@ func main() {
 				} else if ev.Str() == "J" || ev.Str() == "j" {
 					game.player.InitJump()
 				} else if ev.Str() == "D" || ev.Str() == "d" {
-					game.player.x += 4
+					game.moveRight = true
 				} else {
 					s.Clear()
 					s.Put(0, 0, ev.Str(), defStyle)
 				}
 			}
 		case <-ticker.C:
-			Update(s, *game)
+			Update(s, game)
 		}
 	}
 }
 
-func Update(s tcell.Screen, g Game) {
+func Update(s tcell.Screen, g *Game) {
 	g.Update()
 
 	// Player
