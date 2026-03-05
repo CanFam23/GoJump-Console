@@ -154,8 +154,6 @@ func main() {
 						showHome = false
 						game.Reset()
 					}
-				} else if ev.Str() == "C" || ev.Str() == "c" {
-					s.Clear()
 				} else if ev.Str() == "J" || ev.Str() == "j" {
 					game.player.InitJump()
 				} else if ev.Str() == "D" || ev.Str() == "d" {
