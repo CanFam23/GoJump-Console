@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"strconv"
 	"time"
 
 	"github.com/gdamore/tcell/v3"
@@ -72,6 +71,52 @@ func drawBox(s tcell.Screen, x1, y1, x2, y2 int, style tcell.Style, text string)
 	drawText(s, x1+1, y1+1, x2-1, y2-1, style, text)
 }
 
+func drawLine(s tcell.Screen, x, y int, style tcell.Style, text string) {
+	for _, r := range text {
+		s.SetContent(x, y, r, nil, style)
+		x++
+	}
+}
+
+func drawHome(s tcell.Screen, style tcell.Style) {
+	w, h := s.Size()
+	lines := []string{
+		"GO JUMP CONSOLE",
+		"",
+		"How to play:",
+		"J: Jump",
+		"D: Move right",
+		"Avoid the walls",
+		"",
+		"Optimal terminal size: 75x25",
+		"Changing terminal size changes gameplay and may break it.",
+		"(Fixed terminal size cannot be enforced here.)",
+		"",
+		"S: Start game",
+		"Esc or Ctrl+C: Quit",
+	}
+
+	s.Clear()
+	startY := (h / 2) - (len(lines) / 2)
+	if startY < 0 {
+		startY = 0
+	}
+
+	for i, line := range lines {
+		y := startY + i
+		if y >= h {
+			break
+		}
+		x := (w - len(line)) / 2
+		if x < 0 {
+			x = 0
+		}
+		drawLine(s, x, y, style, line)
+	}
+
+	s.Show()
+}
+
 func main() {
 	defStyle := tcell.StyleDefault.Background(color.Reset).Foreground(color.Reset)
 
@@ -108,6 +153,7 @@ func main() {
 	w, h := s.Size()
 
 	game := NewGame(w, h)
+	showHome := true
 
 	ticker := time.NewTicker(time.Second / 60)
 	defer ticker.Stop()
@@ -120,21 +166,23 @@ func main() {
 			case *tcell.EventResize:
 				s.Sync()
 				w, h = s.Size()
-
-				sXStr := strconv.Itoa(w)
-				sYStr := strconv.Itoa(h)
-
-				s.Clear()
-
-				drawText(s, 0, 0, len(sXStr), 0, defStyle, sXStr)
-				drawText(s, 0, 1, len(sYStr), 1, defStyle, sYStr)
-
 				game.OnResize(w, h)
+				if showHome {
+					drawHome(s, defStyle)
+				}
 			case *tcell.EventKey:
 				if ev.Key() == tcell.KeyEscape || ev.Key() == tcell.KeyCtrlC {
 					return
 				} else if ev.Key() == tcell.KeyCtrlL {
 					s.Sync()
+					if showHome {
+						drawHome(s, defStyle)
+					}
+				} else if showHome {
+					if ev.Str() == "S" || ev.Str() == "s" {
+						showHome = false
+						game.Reset()
+					}
 				} else if ev.Str() == "C" || ev.Str() == "c" {
 					s.Clear()
 				} else if ev.Str() == "J" || ev.Str() == "j" {
@@ -147,7 +195,11 @@ func main() {
 				}
 			}
 		case <-ticker.C:
-			Update(s, game)
+			if showHome {
+				drawHome(s, defStyle)
+			} else {
+				Update(s, game)
+			}
 		}
 	}
 }
