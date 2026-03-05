@@ -9,6 +9,7 @@ const playerHeight = 4
 const floorHeight = 3
 const gameSpeed = -0.25
 
+// Game holds runtime state for the current run.
 type Game struct {
 	scrW      int
 	scrH      int
@@ -18,6 +19,7 @@ type Game struct {
 	moveRight bool
 }
 
+// NewGame constructs the initial game state.
 func NewGame(w, h int) *Game {
 	game := &Game{
 		scrW:   w,
@@ -36,6 +38,7 @@ func NewGame(w, h int) *Game {
 	return game
 }
 
+// OnResize updates dimensions and repositions entities tied to screen height.
 func (g *Game) OnResize(newScrW, newScrH int) {
 	g.scrW = newScrW
 	g.scrH = newScrH
@@ -51,6 +54,7 @@ func (g *Game) OnResize(newScrW, newScrH int) {
 	}
 }
 
+// Reset returns player and walls to their starting layout.
 func (g *Game) Reset() {
 	g.player.Reset(10, g.scrH-floorHeight-1)
 
@@ -59,6 +63,7 @@ func (g *Game) Reset() {
 	}
 }
 
+// Draw renders the floor, player, and all walls.
 func (g *Game) Draw(s tcell.Screen) {
 	g.floor.Draw(s)
 	g.player.Draw(s)
@@ -68,6 +73,7 @@ func (g *Game) Draw(s tcell.Screen) {
 	}
 }
 
+// Update advances one simulation tick.
 func (g *Game) Update() {
 	groundY := g.scrH - floorHeight - 1
 	g.player.Update(groundY, gameSpeed, g.scrW)
@@ -77,7 +83,6 @@ func (g *Game) Update() {
 		g.moveRight = false
 	}
 
-	// move walls
 	for _, wall := range g.walls {
 		if wall.IsColliding(g.player) {
 			g.Reset()
@@ -91,17 +96,17 @@ func (g *Game) Update() {
 	}
 }
 
+// moveRightStep applies one right movement step and collision response.
 func (g *Game) moveRightStep() {
 	const step = 3.0
 
 	g.player.x += step
 
-	// prevent leaving screen
 	if g.player.x+float64(g.player.w) > float64(g.scrW) {
 		g.player.x = float64(g.scrW - g.player.w)
 	}
 
-	// reset if hitting a wall
+	// Keep collision behavior consistent with wall movement collisions.
 	for _, wall := range g.walls {
 		if wall.IsColliding(g.player) {
 			g.Reset()

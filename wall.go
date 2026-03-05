@@ -5,11 +5,13 @@ import "github.com/gdamore/tcell/v3"
 const defaultWallWidth = 2
 const defaultWallHeight = 10
 
+// Wall is an axis-aligned obstacle rectangle.
 type Wall struct {
 	w, h, y int
 	x       float64
 }
 
+// NewWall creates a wall with explicit size.
 func NewWall(x float64, y, w, h int) *Wall {
 	return &Wall{
 		w: w,
@@ -19,6 +21,7 @@ func NewWall(x float64, y, w, h int) *Wall {
 	}
 }
 
+// NewWallDefault creates a wall using the game's default dimensions.
 func NewWallDefault(x float64, y int) *Wall {
 	return &Wall{
 		w: defaultWallWidth,
@@ -28,28 +31,31 @@ func NewWallDefault(x float64, y int) *Wall {
 	}
 }
 
+// Update moves the wall by dx,dy.
 func (w *Wall) Update(dx float64, dy int) {
 	w.x += dx
 	w.y += dy
 }
 
+// Draw renders the wall rectangle.
 func (w *Wall) Draw(s tcell.Screen) {
-	drawBox(s, int(w.x), w.y, int(int(w.x)+w.w), w.y+w.h, floorStyle, "")
+	drawBox(s, int(w.x), w.y, int(int(w.x)+w.w), w.y+w.h, floorStyle)
 }
 
+// IsGroundFor reports whether a player's base is below the wall top.
 func (w *Wall) IsGroundFor(player Player) bool {
 	return player.y+player.h > w.y
 }
 
+// IsColliding reports overlap between the wall and player.
 func (wall *Wall) IsColliding(p *Player) bool {
-	// X overlap (float64)
 	pLeft := p.x
 	pRight := p.x + float64(p.w)
 
 	wLeft := wall.x
 	wRight := wall.x + float64(wall.w)
 
-	// Y overlap (int). Player is drawn from (y-h) to y
+	// Player is drawn from y-h (top) to y (bottom).
 	pTop := p.y - p.h
 	pBottom := p.y
 

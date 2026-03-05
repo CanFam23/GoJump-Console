@@ -2,6 +2,7 @@ package main
 
 import "github.com/gdamore/tcell/v3"
 
+// Player stores position, size, and jump physics state.
 type Player struct {
 	x                 float64
 	y, w, h           int
@@ -9,6 +10,7 @@ type Player struct {
 	velocity, gravity float64
 }
 
+// NewPlayer creates a player with default jump physics.
 func NewPlayer(x float64, y, w, h int) (p *Player) {
 	return &Player{
 		x:         x,
@@ -21,10 +23,12 @@ func NewPlayer(x float64, y, w, h int) (p *Player) {
 	}
 }
 
+// Draw renders the player as a rectangle.
 func (p *Player) Draw(s tcell.Screen) {
-	drawBox(s, int(p.x), p.y, int(p.x)+p.w, p.y-p.h, playerStyle, "")
+	drawBox(s, int(p.x), p.y, int(p.x)+p.w, p.y-p.h, playerStyle)
 }
 
+// InitJump starts a jump when the player is grounded.
 func (p *Player) InitJump() {
 	if !p.isJumping {
 		p.isJumping = true
@@ -32,10 +36,11 @@ func (p *Player) InitJump() {
 	}
 }
 
+// Update applies jump and horizontal movement, then clamps to ground.
 func (p *Player) Update(groundY int, gameSpeed float64, screenWidth int) {
 	dx, dy := p.CalcDisplacement()
 
-	// If positive dy means "up", y should decrease to move up in terminal coordinates.
+	// Terminal y increases downward, so jumping subtracts y.
 	p.y -= int(dy)
 
 	nextX := p.x + gameSpeed + float64(dx)
@@ -44,7 +49,6 @@ func (p *Player) Update(groundY int, gameSpeed float64, screenWidth int) {
 		p.x = nextX
 	}
 
-	// Clamp / landing
 	if p.y >= groundY {
 		p.y = groundY
 		p.isJumping = false
@@ -52,6 +56,7 @@ func (p *Player) Update(groundY int, gameSpeed float64, screenWidth int) {
 	}
 }
 
+// CalcDisplacement returns the per-frame displacement from jump physics.
 func (p *Player) CalcDisplacement() (int, float64) {
 	if p.isJumping {
 		p.velocity -= p.gravity
@@ -60,6 +65,7 @@ func (p *Player) CalcDisplacement() (int, float64) {
 	return 0, 0.0
 }
 
+// Reset optionally resets position and always resets jump state.
 func (p *Player) Reset(x, y int) {
 	if x != 0 || y != 0 {
 		p.x = float64(x)

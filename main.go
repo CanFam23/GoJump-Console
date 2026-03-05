@@ -14,28 +14,10 @@ var floorStyle = tcell.StyleDefault.
 
 var playerStyle = tcell.StyleDefault.Foreground(color.White).Background(color.Red)
 
-func drawText(s tcell.Screen, x1, y1, x2, y2 int, style tcell.Style, text string) {
-	row := y1
-	col := x1
-	var width int
-	for text != "" {
-		text, width = s.Put(col, row, text, style)
-		col += width
-		if col >= x2 {
-			row++
-			col = x1
-		}
-		if row > y2 {
-			break
-		}
-		if width == 0 {
-			// incomplete grapheme at end of string
-			break
-		}
-	}
-}
-
-func drawBox(s tcell.Screen, x1, y1, x2, y2 int, style tcell.Style, text string) {
+// drawBox renders a bordered rectangle with a filled background.
+// Adapted from the tcell tutorial drawBox example:
+// https://github.com/gdamore/tcell/blob/main/TUTORIAL.md
+func drawBox(s tcell.Screen, x1, y1, x2, y2 int, style tcell.Style) {
 	if y2 < y1 {
 		y1, y2 = y2, y1
 	}
@@ -43,14 +25,12 @@ func drawBox(s tcell.Screen, x1, y1, x2, y2 int, style tcell.Style, text string)
 		x1, x2 = x2, x1
 	}
 
-	// Fill background
 	for row := y1; row <= y2; row++ {
 		for col := x1; col <= x2; col++ {
 			s.Put(col, row, " ", style)
 		}
 	}
 
-	// Draw borders
 	for col := x1; col <= x2; col++ {
 		s.Put(col, y1, string(tcell.RuneHLine), style)
 		s.Put(col, y2, string(tcell.RuneHLine), style)
@@ -60,17 +40,15 @@ func drawBox(s tcell.Screen, x1, y1, x2, y2 int, style tcell.Style, text string)
 		s.Put(x2, row, string(tcell.RuneVLine), style)
 	}
 
-	// Only draw corners if necessary
 	if y1 != y2 && x1 != x2 {
 		s.Put(x1, y1, string(tcell.RuneULCorner), style)
 		s.Put(x2, y1, string(tcell.RuneURCorner), style)
 		s.Put(x1, y2, string(tcell.RuneLLCorner), style)
 		s.Put(x2, y2, string(tcell.RuneLRCorner), style)
 	}
-
-	drawText(s, x1+1, y1+1, x2-1, y2-1, style, text)
 }
 
+// drawLine writes a single line of text starting at x,y.
 func drawLine(s tcell.Screen, x, y int, style tcell.Style, text string) {
 	for _, r := range text {
 		s.SetContent(x, y, r, nil, style)
@@ -78,6 +56,7 @@ func drawLine(s tcell.Screen, x, y int, style tcell.Style, text string) {
 	}
 }
 
+// drawHome renders the instructions screen before gameplay starts.
 func drawHome(s tcell.Screen, style tcell.Style) {
 	w, h := s.Size()
 	lines := []string{
@@ -97,10 +76,7 @@ func drawHome(s tcell.Screen, style tcell.Style) {
 	}
 
 	s.Clear()
-	startY := (h / 2) - (len(lines) / 2)
-	if startY < 0 {
-		startY = 0
-	}
+	startY := max((h/2)-(len(lines)/2), 0)
 
 	for i, line := range lines {
 		y := startY + i
@@ -117,10 +93,12 @@ func drawHome(s tcell.Screen, style tcell.Style) {
 	s.Show()
 }
 
+// main initializes tcell and runs the event/update loop.
+// Screen setup and event-loop structure are adapted from:
+// https://github.com/gdamore/tcell/blob/main/TUTORIAL.md
 func main() {
 	defStyle := tcell.StyleDefault.Background(color.Reset).Foreground(color.Reset)
 
-	// Initialize screen
 	s, err := tcell.NewScreen()
 	if err != nil {
 		log.Fatalf("%+v", err)
@@ -134,14 +112,8 @@ func main() {
 	s.Clear()
 	s.SetSize(75, 25)
 
-	// Draw initial boxes
-	// drawBox(s, 1, 1, 42, 7, boxStyle, "Click and drag to draw a box")
-	// drawBox(s, 5, 9, 32, 14, boxStyle, "Press C to reset")
-
+	// Adapted panic-safe shutdown pattern from the tcell tutorial demo.
 	quit := func() {
-		// You have to catch panics in a defer, clean up, and
-		// re-raise them - otherwise your application can
-		// die without leaving any diagnostic trace.
 		maybePanic := recover()
 		s.Fini()
 		if maybePanic != nil {
@@ -161,7 +133,6 @@ func main() {
 	for {
 		select {
 		case ev := <-s.EventQ():
-			// Process event
 			switch ev := ev.(type) {
 			case *tcell.EventResize:
 				s.Sync()
@@ -204,13 +175,10 @@ func main() {
 	}
 }
 
+// Update advances and redraws one gameplay frame.
 func Update(s tcell.Screen, g *Game) {
 	g.Update()
-
-	// Player
 	s.Clear()
-
 	g.Draw(s)
-	// Update screen
 	s.Show()
 }
